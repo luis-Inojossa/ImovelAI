@@ -618,18 +618,18 @@ async function startProcess(){
   let mi=0; const iv=setInterval(()=>{document.getElementById('load-msg').textContent=msgs[Math.min(mi++,msgs.length-1)];},1200);
   try{
     const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',max_tokens:1000,
+      model:'claude-3-5-sonnet-20241022',max_tokens:2000,
       messages:[{role:'user',content:`Extraia informações do texto e retorne SOMENTE JSON válido sem markdown.\n\nCampos: codigo, status(Pendente|Ativo|Inativo|Vendido|Alugado), situacao(Novo|Usado|Em construção|Na planta), ocupacao(Proprietário|Inquilino|Vazio), estado(Ótimo|Bom|Regular|Ruim), finalidade(Residencial|Comercial), cep(só números), endereco, numero, complemento, bairro, cidade, venda(só números), aluguel(só números), condominio(só números), iptu(só números), dormitorios(number), suites(number), salas(number), varandas(number), banheiros(number), lavabos(number), vagas(number), vagas_obs, area_total, area_privativa, titulo, descricao, piso_social(Porcelanato|Cerâmica|Madeira|Mármore|Granito|Vinílico|Outro), piso_dorms, piso_intima, piso_salas, matricula, cartorio, contribuinte, percentual, aceita_permuta(boolean), aceita_financiamento(boolean), com_renda(boolean), prop_nome, prop_tel(só números), prop_cpf(só números), itens(array - itens que a casa tem).\n\nSe não encontrar, use null. Se disser "tudo porcelanato", aplique em todos os pisos.\n\nTexto:\n${text}`}]
     })});
     clearInterval(iv);
     const data=await res.json();
     let parsed={};
-    try{const raw=data.content[0].text; parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}catch(e){}
+    try{const raw=data.content[0].text; console.log("RAW IA:",raw); const clean=raw.replace(/```json|```/g,"").trim(); const jsonMatch=clean.match(/{[\s\S]*}/) ; parsed=jsonMatch?JSON.parse(jsonMatch[0]):{};console.log("PARSED:",parsed);}catch(e){console.error("Parse error:",e);}
     fillForm(parsed); renderPhotos(); renderDocs();
     show('s2');
   }catch(e){
     clearInterval(iv);
-    toast('Erro ao conectar com a IA. Verifique a API Key no servidor.');
+    const errMsg=e.message||'Erro desconhecido'; toast('Erro: '+errMsg);console.error('Erro IA:',e);
     show('s1');
   }
 }
