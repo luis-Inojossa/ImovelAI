@@ -626,7 +626,22 @@ TEXTO: ${text}`;
     clearInterval(iv);
     const data=await res.json();
     let parsed={};
-    try{const raw=data.content[0].text.trim();const s=raw.indexOf('{');const e=raw.lastIndexOf('}');if(s!==-1&&e!==-1){parsed=JSON.parse(raw.substring(s,e+1));}}catch(e){console.error('Parse error:',e);}
+    try{
+      const raw=data.content[0].text.trim();
+      const s=raw.indexOf('{');
+      const e2=raw.lastIndexOf('}');
+      if(s!==-1&&e2!==-1){
+        const jsonStr=raw.substring(s,e2+1);
+        parsed=JSON.parse(jsonStr);
+        console.log('IA retornou:',parsed);
+        // Mostra resumo do que foi extraído
+        const campos=Object.keys(parsed).filter(k=>parsed[k]!==null&&parsed[k]!==false&&parsed[k]!=='');
+        toast('✦ Extraídos: '+campos.length+' campos');
+      } else {
+        console.error('JSON não encontrado na resposta:',raw);
+        toast('Erro: IA não retornou JSON válido');
+      }
+    }catch(ex){console.error('Parse error:',ex,data.content);}
         fillForm(parsed); renderPhotos(); renderDocs();
     show('s2');
   }catch(e){
