@@ -617,15 +617,17 @@ async function startProcess(){
   const msgs=['Lendo mensagens...','Identificando dados...','Extraindo proprietário e valores...','Analisando características...','Organizando campos do CRM...'];
   let mi=0; const iv=setInterval(()=>{document.getElementById('load-msg').textContent=msgs[Math.min(mi++,msgs.length-1)];},1200);
   try{
-    const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      model:'claude-3-5-sonnet-20241022',max_tokens:2000,
-      messages:[{role:'user',content:`Extraia informações do texto e retorne SOMENTE JSON válido sem markdown.\n\nCampos: codigo, status(Pendente|Ativo|Inativo|Vendido|Alugado), situacao(Novo|Usado|Em construção|Na planta), ocupacao(Proprietário|Inquilino|Vazio), estado(Ótimo|Bom|Regular|Ruim), finalidade(Residencial|Comercial), cep(só números), endereco, numero, complemento, bairro, cidade, venda(só números), aluguel(só números), condominio(só números), iptu(só números), dormitorios(number), suites(number), salas(number), varandas(number), banheiros(number), lavabos(number), vagas(number), vagas_obs, area_total, area_privativa, titulo, descricao, piso_social(Porcelanato|Cerâmica|Madeira|Mármore|Granito|Vinílico|Outro), piso_dorms, piso_intima, piso_salas, matricula, cartorio, contribuinte, percentual, aceita_permuta(boolean), aceita_financiamento(boolean), com_renda(boolean), prop_nome, prop_tel(só números), prop_cpf(só números), itens(array - itens que a casa tem).\n\nSe não encontrar, use null. Se disser "tudo porcelanato", aplique em todos os pisos.\n\nTexto:\n${text}`}]
-    })});
+    const prompt = `Você é um assistente que extrai dados de imóveis. Analise o texto e retorne APENAS JSON válido, sem texto adicional, sem markdown. Use null para campos não encontrados. Para IPTU anual divida por 12 para obter mensal. Para itens liste apenas os mencionados.
+
+Formato: {"codigo":null,"status":"Pendente","situacao":null,"ocupacao":null,"estado":null,"finalidade":"Residencial","cep":null,"endereco":null,"numero":null,"complemento":null,"bairro":null,"cidade":null,"venda":null,"aluguel":null,"condominio":null,"iptu":null,"dormitorios":null,"suites":null,"salas":null,"varandas":null,"banheiros":null,"lavabos":null,"vagas":null,"vagas_obs":null,"area_total":null,"area_privativa":null,"titulo":null,"descricao":null,"piso_social":null,"piso_dorms":null,"piso_intima":null,"piso_salas":null,"matricula":null,"cartorio":null,"contribuinte":null,"percentual":null,"aceita_permuta":false,"aceita_financiamento":false,"com_renda":false,"prop_nome":null,"prop_tel":null,"prop_cpf":null,"itens":[]}
+
+TEXTO: ${text}`;
+    const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-3-5-sonnet-20241022',max_tokens:2000,messages:[{role:'user',content:prompt}]})});
     clearInterval(iv);
     const data=await res.json();
     let parsed={};
-    try{const raw=data.content[0].text; console.log("RAW IA:",raw); const clean=raw.replace(/```json|```/g,"").trim(); const jsonMatch=clean.match(/{[\s\S]*}/) ; parsed=jsonMatch?JSON.parse(jsonMatch[0]):{};console.log("PARSED:",parsed);}catch(e){console.error("Parse error:",e);}
-    fillForm(parsed); renderPhotos(); renderDocs();
+    try{const raw=data.content[0].text.trim();const s=raw.indexOf('{');const e=raw.lastIndexOf('}');if(s!==-1&&e!==-1){parsed=JSON.parse(raw.substring(s,e+1));}}catch(e){console.error('Parse error:',e);}
+        fillForm(parsed); renderPhotos(); renderDocs();
     show('s2');
   }catch(e){
     clearInterval(iv);
