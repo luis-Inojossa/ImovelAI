@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>imóvelAI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e10;
+  --surface: #17171a;
+  --surface2: #1f1f24;
+  --border: #2a2a30;
+  --border2: #38383f;
+  --accent: #e8ff47;
+  --text: #f0f0ee;
+  --muted: #888890;
+  --muted2: #555560;
+  --green: #3ddc84;
+  --red: #ff5f57;
+  --blue: #4a9eff;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  line-height: 1.6;
+}
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; }
+.logo span { color: var(--accent); }
+.badge {
+  font-size: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.steps {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.step-dot { width: 28px; height: 4px; border-radius: 2px; background: var(--border2); transition: background 0.3s; }
+.step-dot.active { background: var(--accent); }
+.step-dot.done { background: var(--green); }
+main { max-width: 900px; margin: 0 auto; padding: 40px 24px 100px; }
+.screen { display: none; }
+.screen.active { display: block; }
+.title { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+.subtitle { color: var(--muted); margin-bottom: 32px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--accent);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 10px;
+  font-family: 'DM Mono', monospace;
+}
+textarea {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 220px;
+  line-height: 1.7;
+}
+textarea::placeholder { color: var(--muted2); }
+.upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.upload-box {
+  background: var(--surface);
+  border: 1px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  position: relative;
+}
+.upload-box:hover { border-color: var(--accent); }
+.upload-box input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-box .icon { font-size: 24px; margin-bottom: 8px; }
+.upload-box .label { font-size: 12px; color: var(--muted); }
+.upload-box .label strong { color: var(--text); display: block; margin-bottom: 2px; }
+.upload-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent); margin-top: 6px; }
+.btn {
+  background: var(--accent);
+  color: #0e0e10;
+  border: none;
+  padding: 14px 32px;
+  border-radius: var(--radius);
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn:hover { background: #c8dd30; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-sec {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border2);
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-sec:hover { border-color: var(--text); color: var(--text); }
+.spinner {
+  width: 44px; height: 44px;
+  border: 3px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 20px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-wrap { text-align: center; padding: 80px 24px; }
+.loading-wrap .title { font-size: 20px; }
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--surface);
+  padding: 4px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.tab {
+  flex: 1;
+  padding: 9px 8px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  transition: all 0.2s;
+  text-align: center;
+}
+.tab.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.full { grid-column: 1 / -1; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.8px; color: var(--muted); text-transform: uppercase; }
+.field input, .field select, .field textarea {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+.field select option { background: var(--surface2); }
+.field textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+.sec-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 20px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.checks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 11px;
+  user-select: none;
+}
+.check-item:hover { border-color: var(--border2); }
+.check-item.checked { border-color: var(--accent); background: rgba(232,255,71,0.06); }
+.check-box {
+  width: 14px; height: 14px;
+  border: 1.5px solid var(--border2);
+  border-radius: 3px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0e0e10;
+  transition: all 0.15s;
+}
+.check-item.checked .check-box { background: var(--accent); border-color: var(--accent); }
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.photo-card {
+  aspect-ratio: 4/3;
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  border: 2px solid transparent;
+  cursor: pointer;
+  background: var(--surface2);
+  transition: border-color 0.2s;
+}
+.photo-card img { width: 100%; height: 100%; object-fit: cover; }
+.photo-card.hl { border-color: var(--accent); }
+.photo-star {
+  position: absolute;
+  top: 5px; right: 5px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.photo-card.hl .photo-star { color: var(--accent); }
+.photo-add {
+  aspect-ratio: 4/3;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  gap: 5px;
+  position: relative;
+  transition: all 0.2s;
+}
+.photo-add:hover { border-color: var(--accent); color: var(--accent); }
+.photo-add input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.attach-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+}
+.attach-info { flex: 1; }
+.attach-name { font-size: 13px; font-weight: 500; }
+.attach-sub { font-size: 11px; color: var(--muted); }
+.status-ok { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(61,220,132,0.1); color: var(--green); }
+.status-miss { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(255,95,87,0.1); color: var(--red); }
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(14,14,16,0.96);
+  border-top: 1px solid var(--border);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+}
+.bar-info { font-size: 13px; color: var(--muted); }
+.bar-info strong { color: var(--text); }
+.bar-btns { display: flex; gap: 10px; }
+.toast {
+  position: fixed;
+  bottom: 80px; right: 24px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  z-index: 200;
+  max-width: 300px;
+}
+.info-box {
+  display: flex; gap: 10px;
+  padding: 12px 14px;
+  background: rgba(74,158,255,0.06);
+  border: 1px solid rgba(74,158,255,0.15);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: var(--blue);
+}
+.hint { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.hint strong { color: var(--accent); }
+.done-wrap { text-align: center; padding: 80px 24px; }
+@media (max-width: 600px) {
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .checks-grid { grid-template-columns: repeat(2, 1fr); }
+  .photos-grid { grid-template-columns: repeat(2, 1fr); }
+  .upload-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">imóvel<span>AI</span></div>
+  <span class="badge">BETA v0.1</span>
+  <div class="steps">
+    <div class="step-dot active" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
+  </div>
+</header>
+
+<main>
+
+<div class="screen active" id="s1">
+  <div class="title">Colar mensagens do corretor</div>
+  <div class="subtitle">Cole abaixo tudo que o corretor mandou no WhatsApp — pode vir bagunçado, sem problema.</div>
+  <div class="card">
+    <span class="card-label">Mensagens do WhatsApp</span>
+    <textarea id="wpp" placeholder="Ex: Pazzz o imóvel é um sobrado 4 suítes, 240m2, Quinta da Primavera, valor 2.1M, proprietário Alexandre Brandão 16 99994-2620, CPF 123.456.789-00, aceita financiamento, percentual 6%, matrícula 0129857, cartório II..."></textarea>
+  </div>
+  <div class="upload-row">
+    <div class="upload-box">
+      <input type="file" id="photos-in" accept="image/*" multiple onchange="onPhotos(this)">
+      <div class="icon">🖼️</div>
+      <div class="label"><strong>Fotos do imóvel</strong>Selecione todas as fotos</div>
+      <div class="upload-count" id="photos-ct">Nenhuma foto</div>
+    </div>
+    <div class="upload-box">
+      <input type="file" id="docs-in" accept=".pdf" multiple onchange="onDocs(this)">
+      <div class="icon">📎</div>
+      <div class="label"><strong>Documentos PDF</strong>IPTU + Autorização do proprietário</div>
+      <div class="upload-count" id="docs-ct">Nenhum documento</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center">
+    <button class="btn" onclick="startProcess()">✦ Analisar com IA</button>
+    <span style="font-size:12px;color:var(--muted)">A IA vai extrair e organizar todos os dados automaticamente</span>
+  </div>
+</div>
+
+<div class="screen" id="s-load">
+  <div class="loading-wrap">
+    <div class="spinner"></div>
+    <div class="title">Analisando mensagens...</div>
+    <div id="load-msg" style="color:var(--muted);font-size:13px;margin-top:8px">Extraindo dados com IA</div>
+  </div>
+</div>
+
+<div class="screen" id="s2">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+    <div class="title">Revisar cadastro</div>
+    <span style="font-family:'DM Mono',monospace;font-size:10px;background:rgba(232,255,71,0.08);border:1px solid rgba(232,255,71,0.2);color:var(--accent);padding:3px 8px;border-radius:4px;">✦ IA</span>
+  </div>
+  <div class="subtitle">Confira os dados extraídos e defina a foto de destaque.</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="tab('geral',this)">Visão geral</button>
+    <button class="tab" onclick="tab('carac',this)">Características</button>
+    <button class="tab" onclick="tab('com',this)">Comercial</button>
+    <button class="tab" onclick="tab('prop',this)">Proprietário</button>
+    <button class="tab" onclick="tab('midia',this)">Fotos & Docs</button>
+  </div>
+
+  <div class="tab-content active" id="tab-geral">
+    <div class="sec-title">Identificação</div>
+    <div class="grid2">
+      <div class="field"><label>Código</label><input id="f-cod"></div>
+      <div class="field"><label>Status</label><select id="f-status"><option>Pendente</option><option>Ativo</option><option>Inativo</option><option>Vendido</option><option>Alugado</option></select></div>
+      <div class="field"><label>Situação</label><select id="f-sit"><option value="">Selecione</option><option>Novo</option><option>Usado</option><option>Em construção</option><option>Na planta</option></select></div>
+      <div class="field"><label>Ocupação</label><select id="f-ocu"><option value="">Selecione</option><option>Proprietário</option><option>Inquilino</option><option>Vazio</option></select></div>
+      <div class="field"><label>Estado</label><select id="f-est"><option value="">Selecione</option><option>Ótimo</option><option>Bom</option><option>Regular</option><option>Ruim</option></select></div>
+      <div class="field"><label>Finalidade</label><select id="f-fin"><option>Residencial</option><option>Comercial</option></select></div>
+    </div>
+    <div class="sec-title">Localização</div>
+    <div class="grid2">
+      <div class="field"><label>CEP</label><input id="f-cep" placeholder="00000-000" oninput="mCep(this)" onblur="buscaCep(this.value)"></div>
+      <div class="field"><label>Número</label><input id="f-num"></div>
+      <div class="field full"><label>Endereço</label><input id="f-end"></div>
+      <div class="field"><label>Bairro</label><input id="f-bairro"></div>
+      <div class="field"><label>Cidade</label><input id="f-cidade"></div>
+      <div class="field"><label>Complemento</label><input id="f-compl"></div>
+    </div>
+    <div class="sec-title">Valores</div>
+    <div class="grid2">
+      <div class="field"><label>Valor de venda</label><input id="f-venda" placeholder="R$ 0,00" oninput="mMoney(this)"></div>
+      <div class="field"><label>Valor de aluguel</label><input id="f-alug" placeholder="R$ 0,00" oninput="mMoney(this)"></div>
+      <div class="field"><label>Condomínio</label><input id="f-cond" placeholder="R$ 0,00" oninput="mMoney(this)"></div>
+      <div class="field"><label>IPTU</label><input id="f-iptu" placeholder="R$ 0,00" oninput="mMoney(this)"></div>
+    </div>
+    <div class="sec-title">Cômodos e áreas</div>
+    <div class="grid3">
+      <div class="field"><label>Dormitórios</label><input type="number" id="f-dorms" min="0"></div>
+      <div class="field"><label>Suítes</label><input type="number" id="f-suits" min="0"></div>
+      <div class="field"><label>Salas</label><input type="number" id="f-salas" min="0"></div>
+      <div class="field"><label>Varandas</label><input type="number" id="f-var" min="0"></div>
+      <div class="field"><label>Banheiros</label><input type="number" id="f-banh" min="0"></div>
+      <div class="field"><label>Lavabos</label><input type="number" id="f-lav" min="0"></div>
+      <div class="field"><label>Vagas</label><input type="number" id="f-vag" min="0"></div>
+      <div class="field"><label>Área total (m²)</label><input id="f-at"></div>
+      <div class="field"><label>Área privativa (m²)</label><input id="f-ap"></div>
+    </div>
+    <div class="field" style="margin-bottom:14px"><label>Obs. vagas</label><input id="f-vag-obs" placeholder="Ex: 2 cobertas"></div>
+  </div>
+
+  <div class="tab-content" id="tab-carac">
+    <div class="sec-title">Anúncio</div>
+    <div class="field" style="margin-bottom:14px"><label>Título</label><input id="f-tit"></div>
+    <div class="field" style="margin-bottom:14px"><label>Descrição</label><textarea id="f-desc" style="min-height:120px"></textarea></div>
+    <div class="sec-title">Acabamento do piso</div>
+    <div class="grid2" style="margin-bottom:20px">
+      <div class="field"><label>Área social</label><select id="f-ps"><option value="">Selecione</option><option>Porcelanato</option><option>Cerâmica</option><option>Madeira</option><option>Mármore</option><option>Granito</option><option>Vinílico</option><option>Outro</option></select></div>
+      <div class="field"><label>Dormitórios</label><select id="f-pd"><option value="">Selecione</option><option>Porcelanato</option><option>Cerâmica</option><option>Madeira</option><option>Mármore</option><option>Granito</option><option>Vinílico</option><option>Outro</option></select></div>
+      <div class="field"><label>Área íntima</label><select id="f-pi"><option value="">Selecione</option><option>Porcelanato</option><option>Cerâmica</option><option>Madeira</option><option>Mármore</option><option>Granito</option><option>Vinílico</option><option>Outro</option></select></div>
+      <div class="field"><label>Salas</label><select id="f-psl"><option value="">Selecione</option><option>Porcelanato</option><option>Cerâmica</option><option>Madeira</option><option>Mármore</option><option>Granito</option><option>Vinílico</option><option>Outro</option></select></div>
+    </div>
+    <div class="sec-title">Itens do imóvel</div>
+    <div class="info-box">ℹ️ <span>Marcados pela IA com base na descrição. Clique para ajustar.</span></div>
+    <div class="checks-grid" id="checks"></div>
+  </div>
+
+  <div class="tab-content" id="tab-com">
+    <div class="sec-title">Registro</div>
+    <div class="grid2">
+      <div class="field"><label>N° matrícula</label><input id="f-mat"></div>
+      <div class="field"><label>Cartório</label><input id="f-cart"></div>
+      <div class="field"><label>N° contribuinte</label><input id="f-contrib"></div>
+      <div class="field"><label>Percentual corretor (%)</label><input id="f-perc" placeholder="6,00"></div>
+    </div>
+    <div class="sec-title">Negociação</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <label class="check-item" id="chk-perm" onclick="tCheck(this)"><span class="check-box"></span>Aceita permuta</label>
+      <label class="check-item" id="chk-fin" onclick="tCheck(this)"><span class="check-box"></span>Aceita financiamento</label>
+      <label class="check-item" id="chk-renda" onclick="tCheck(this)"><span class="check-box"></span>Com renda</label>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-prop">
+    <div class="sec-title">Dados do proprietário</div>
+    <div class="grid2">
+      <div class="field"><label>Nome</label><input id="f-pnome"></div>
+      <div class="field"><label>Telefone</label><input id="f-ptel" oninput="mPhone(this)"></div>
+      <div class="field"><label>CPF</label><input id="f-pcpf" oninput="mCpf(this)"></div>
+      <div class="field"><label>RG</label><input id="f-prg" placeholder="Gerado automaticamente"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-midia">
+    <div class="sec-title">Fotos</div>
+    <div class="hint">Clique em uma foto para marcá-la como <strong>destaque ★</strong></div>
+    <div class="photos-grid" id="photos-grid"></div>
+    <div class="sec-title">Documentos</div>
+    <div id="docs-list"></div>
+  </div>
+</div>
+
+<div class="screen" id="s3">
+  <div class="done-wrap">
+    <div style="font-size:48px;margin-bottom:20px">✦</div>
+    <div class="title">Cadastro pronto!</div>
+    <div class="subtitle" style="margin-bottom:32px">Dados organizados com sucesso. O robô preencherá o CRM em breve.</div>
+    <button class="btn" onclick="reset()">+ Novo imóvel</button>
+  </div>
+</div>
+
+</main>
+
+<div class="bottom-bar" id="bbar" style="display:none">
+  <div class="bar-info">Imóvel <strong id="bar-cod">—</strong></div>
+  <div class="bar-btns">
+    <button class="btn-sec" onclick="goBack()">← Voltar</button>
+    <button class="btn" onclick="finish()">Enviar pro CRM →</button>
+  </div>
+</div>
+
+<script>
+const ITEMS = ["Aceita Pet","Adega","Água Encanada","Água Quente","Alarme","Aquecedor Solar","Ar Condicionado","Ar Condicionado Split","Armários Embutidos","Área de Serviço","Asfalto","Banheiro Social","Banheiro de Empregada","Bar","Biblioteca","Box Blindex","Canil","Casa de Caseiro","Churrasqueira","Copa","Copa Cozinha","Cozinha","Cozinha Americana","Cozinha Planejada","Deck","Deck Molhado","Dependência de Empregada","Despensa","Dormitório com Armários","Edícula","Escritório","Espera para Split","Estar Íntimo","Geminado","Gradeado","Hall","Hidromassagem","Home Theater","Jardim de Inverno","Lago","Lareira","Lavabo","Mezanino","Mobiliado","Nascente","Pier","Piscina","Piso Elevado","Pista de Cooper","Poço Artesiano","Quintal","Reformado","Sacada","Sacada com Churrasqueira","Sala com Armários","Sala de Almoço","Sala de Jantar","Sala de TV","Sauna","Semi Mobiliado","Sol da Manhã","Sol da Tarde","Split","Suíte Master","Solário","Terraço","Varanda","Varanda Gourmet","Vista Panorâmica","Vista para o Mar"];
+let photos=[], docs=[], hlIdx=0, checked=new Set();
+
+function buildChecks(){
+  const c=document.getElementById('checks'); c.innerHTML='';
+  ITEMS.forEach(item=>{
+    const el=document.createElement('label');
+    el.className='check-item'+(checked.has(item)?' checked':'');
+    el.dataset.item=item;
+    el.onclick=()=>tItemCheck(el,item);
+    el.innerHTML=`<span class="check-box">${checked.has(item)?'✓':''}</span><span>${item}</span>`;
+    c.appendChild(el);
+  });
+}
+function tItemCheck(el,item){
+  if(checked.has(item)){checked.delete(item);el.classList.remove('checked');el.querySelector('.check-box').textContent='';}
+  else{checked.add(item);el.classList.add('checked');el.querySelector('.check-box').textContent='✓';}
+}
+function tCheck(el){ el.classList.toggle('checked'); }
+function onPhotos(inp){ photos=Array.from(inp.files); document.getElementById('photos-ct').textContent=photos.length+' foto(s)'; }
+function onDocs(inp){ docs=Array.from(inp.files); document.getElementById('docs-ct').textContent=docs.length+' doc(s)'; }
+function mMoney(el){ let v=el.value.replace(/\D/g,''); if(!v){el.value='';return;} v=(parseInt(v)/100).toFixed(2); el.value='R$ '+v.replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function mPhone(el){ let v=el.value.replace(/\D/g,'').substring(0,11); if(v.length>10)v=v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3'); else if(v.length>6)v=v.replace(/(\d{2})(\d{4})(\d*)/,'($1) $2-$3'); else if(v.length>2)v=v.replace(/(\d{2})(\d*)/,'($1) $2'); el.value=v; }
+function mCpf(el){ let v=el.value.replace(/\D/g,'').substring(0,11); v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2'); el.value=v; }
+function mCep(el){ let v=el.value.replace(/\D/g,'').substring(0,8); if(v.length>5)v=v.replace(/(\d{5})(\d)/,'$1-$2'); el.value=v; }
+async function buscaCep(cep){ cep=cep.replace(/\D/g,''); if(cep.length!==8)return; try{ const r=await fetch(`https://viacep.com.br/ws/${cep}/json/`); const d=await r.json(); if(!d.erro){ if(d.logradouro)document.getElementById('f-end').value=d.logradouro; if(d.bairro)document.getElementById('f-bairro').value=d.bairro; if(d.localidade)document.getElementById('f-cidade').value=d.localidade; } }catch(e){} }
+function tab(name,btn){ document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.getElementById('tab-'+name).classList.add('active'); btn.classList.add('active'); }
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); document.getElementById('bbar').style.display=(id==='s2')?'flex':'none'; document.getElementById('dot1').className='step-dot'+(id==='s1'?' active':' done'); document.getElementById('dot2').className='step-dot'+(id==='s2'?' active':(id==='s3'?' done':'')); document.getElementById('dot3').className='step-dot'+(id==='s3'?' active':''); }
+function goBack(){ show('s1'); }
+function finish(){ show('s3'); toast('✦ Dados salvos!'); }
+function reset(){ document.getElementById('wpp').value=''; photos=[];docs=[];checked=new Set();hlIdx=0; show('s1'); }
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),3000); }
+function genRG(){ const n=()=>Math.floor(Math.random()*9); return `${n()}${n()}.${n()}${n()}${n()}.${n()}${n()}${n()}-${n()}`; }
+function fmtMoney(val){ let n=String(val).replace(/\D/g,''); if(!n)return ''; const num=parseInt(n); const r=num>100000?num:num/100; return 'R$ '+r.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function setVal(id,v){ const el=document.getElementById(id); if(el&&v!=null&&v!=='')el.value=v; }
+function setSel(id,v){ const el=document.getElementById(id); if(!el||!v)return; for(let o of el.options){if(o.value===v||o.text===v){el.value=o.value;break;}} }
+
+function fillForm(d){
+  setVal('f-cod',d.codigo); setSel('f-status',d.status||'Pendente'); setSel('f-sit',d.situacao); setSel('f-ocu',d.ocupacao); setSel('f-est',d.estado); setSel('f-fin',d.finalidade||'Residencial');
+  if(d.cep){document.getElementById('f-cep').value=d.cep.replace(/(\d{5})(\d{3})/,'$1-$2');buscaCep(d.cep);}
+  setVal('f-end',d.endereco); setVal('f-num',d.numero); setVal('f-compl',d.complemento); setVal('f-bairro',d.bairro); setVal('f-cidade',d.cidade);
+  if(d.venda)document.getElementById('f-venda').value=fmtMoney(d.venda);
+  if(d.aluguel)document.getElementById('f-alug').value=fmtMoney(d.aluguel);
+  if(d.condominio)document.getElementById('f-cond').value=fmtMoney(d.condominio);
+  if(d.iptu)document.getElementById('f-iptu').value=fmtMoney(d.iptu);
+  setVal('f-dorms',d.dormitorios); setVal('f-suits',d.suites); setVal('f-salas',d.salas); setVal('f-var',d.varandas); setVal('f-banh',d.banheiros); setVal('f-lav',d.lavabos); setVal('f-vag',d.vagas); setVal('f-vag-obs',d.vagas_obs); setVal('f-at',d.area_total); setVal('f-ap',d.area_privativa);
+  setVal('f-tit',d.titulo); setVal('f-desc',d.descricao);
+  setSel('f-ps',d.piso_social); setSel('f-pd',d.piso_dorms); setSel('f-pi',d.piso_intima); setSel('f-psl',d.piso_salas);
+  setVal('f-mat',d.matricula); setVal('f-cart',d.cartorio); setVal('f-contrib',d.contribuinte); setVal('f-perc',d.percentual||'6,00');
+  if(d.aceita_permuta)document.getElementById('chk-perm').classList.add('checked');
+  if(d.aceita_financiamento)document.getElementById('chk-fin').classList.add('checked');
+  if(d.com_renda)document.getElementById('chk-renda').classList.add('checked');
+  setVal('f-pnome',d.prop_nome);
+  if(d.prop_tel){document.getElementById('f-ptel').value=d.prop_tel;mPhone(document.getElementById('f-ptel'));}
+  if(d.prop_cpf){document.getElementById('f-pcpf').value=d.prop_cpf;mCpf(document.getElementById('f-pcpf'));}
+  document.getElementById('f-prg').value=genRG();
+  checked=new Set(d.itens||[]);
+  buildChecks();
+  document.getElementById('bar-cod').textContent=d.codigo||'—';
+}
+
+function renderPhotos(){
+  const g=document.getElementById('photos-grid'); g.innerHTML='';
+  if(!photos.length){g.innerHTML='<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Nenhuma foto carregada.</p>';return;}
+  photos.forEach((f,i)=>{
+    const url=URL.createObjectURL(f);
+    const c=document.createElement('div');
+    c.className='photo-card'+(i===hlIdx?' hl':'');
+    c.innerHTML=`<img src="${url}"><span class="photo-star">★</span>`;
+    c.onclick=()=>{hlIdx=i;document.querySelectorAll('.photo-card').forEach((x,xi)=>x.classList.toggle('hl',xi===i));};
+    g.appendChild(c);
+  });
+  const add=document.createElement('div'); add.className='photo-add';
+  add.innerHTML='<input type="file" accept="image/*" multiple onchange="addPhotos(this)"><span style="font-size:20px">+</span><span>Mais fotos</span>';
+  g.appendChild(add);
+}
+
+function addPhotos(inp){ photos=[...photos,...Array.from(inp.files)]; renderPhotos(); }
+
+function renderDocs(){
+  const c=document.getElementById('docs-list'); c.innerHTML='';
+  ['IPTU','Autorização do proprietário'].forEach((lbl,i)=>{
+    const f=docs[i];
+    c.innerHTML+=`<div class="attach-row"><span style="font-size:20px">📄</span><div class="attach-info"><div class="attach-name">${lbl}</div><div class="attach-sub">${f?f.name:'Não enviado'}</div></div><span class="${f?'status-ok':'status-miss'}">${f?'OK':'FALTANDO'}</span></div>`;
+  });
+}
+
+async function startProcess(){
+  const text=document.getElementById('wpp').value.trim();
+  if(!text){toast('Cole as mensagens do WhatsApp primeiro!');return;}
+  show('s-load');
+  const msgs=['Lendo mensagens...','Identificando dados...','Extraindo proprietário e valores...','Analisando características...','Organizando campos do CRM...'];
+  let mi=0; const iv=setInterval(()=>{document.getElementById('load-msg').textContent=msgs[Math.min(mi++,msgs.length-1)];},1200);
+  try{
+    const prompt = `Você é um assistente que extrai dados de imóveis. Analise o texto e retorne APENAS JSON válido, sem texto adicional, sem markdown. Use null para campos não encontrados. Para IPTU anual divida por 12 para obter mensal. Para itens liste apenas os mencionados.
+
+Formato: {"codigo":null,"status":"Pendente","situacao":null,"ocupacao":null,"estado":null,"finalidade":"Residencial","cep":null,"endereco":null,"numero":null,"complemento":null,"bairro":null,"cidade":null,"venda":null,"aluguel":null,"condominio":null,"iptu":null,"dormitorios":null,"suites":null,"salas":null,"varandas":null,"banheiros":null,"lavabos":null,"vagas":null,"vagas_obs":null,"area_total":null,"area_privativa":null,"titulo":null,"descricao":null,"piso_social":null,"piso_dorms":null,"piso_intima":null,"piso_salas":null,"matricula":null,"cartorio":null,"contribuinte":null,"percentual":null,"aceita_permuta":false,"aceita_financiamento":false,"com_renda":false,"prop_nome":null,"prop_tel":null,"prop_cpf":null,"itens":[]}
+
+TEXTO: ${text}`;
+    const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-3-5-sonnet-20241022',max_tokens:2000,messages:[{role:'user',content:prompt}]})});
+    clearInterval(iv);
+    const data=await res.json();
+    let parsed={};
+    try{
+      const raw=data.content[0].text.trim();
+      const s=raw.indexOf('{');
+      const e2=raw.lastIndexOf('}');
+      if(s!==-1&&e2!==-1){
+        const jsonStr=raw.substring(s,e2+1);
+        parsed=JSON.parse(jsonStr);
+        console.log('IA retornou:',parsed);
+        // Mostra resumo do que foi extraído
+        const campos=Object.keys(parsed).filter(k=>parsed[k]!==null&&parsed[k]!==false&&parsed[k]!=='');
+        toast('✦ Extraídos: '+campos.length+' campos');
+      } else {
+        console.error('JSON não encontrado na resposta:',raw);
+        toast('Erro: IA não retornou JSON válido');
+      }
+    }catch(ex){
+      console.error('Parse error:',ex);
+      console.error('API response:',JSON.stringify(data));
+      toast('Erro no parse. Veja o console F12.');
+    }
+        fillForm(parsed); renderPhotos(); renderDocs();
+    show('s2');
+  }catch(e){
+    clearInterval(iv);
+    const errMsg=e.message||'Erro desconhecido'; toast('Erro: '+errMsg);console.error('Erro IA:',e);
+    show('s1');
+  }
+}
+
+buildChecks();
+</script>
+</body>
+</html>
