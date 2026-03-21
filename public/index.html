@@ -641,7 +641,11 @@ TEXTO: ${text}`;
         console.error('JSON não encontrado na resposta:',raw);
         toast('Erro: IA não retornou JSON válido');
       }
-    }catch(ex){console.error('Parse error:',ex,data.content);}
+    }catch(ex){
+      console.error('Parse error:',ex);
+      console.error('API response:',JSON.stringify(data));
+      toast('Erro no parse. Veja o console F12.');
+    }
         fillForm(parsed); renderPhotos(); renderDocs();
     show('s2');
   }catch(e){
